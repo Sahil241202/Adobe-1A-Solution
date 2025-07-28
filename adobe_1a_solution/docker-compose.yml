@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  pdf-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: adobe-challenge-1a:latest
+    container_name: pdf-outline-extractor
+    volumes:
+      # Mount input directory for PDF files
+      - ./input:/app/input:ro
+      # Mount output directory for results
+      - ./output:/app/output
+      # Optional: Mount logs directory
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pdf_extractor; print('Container healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "challenge=1A"
+      - "description=PDF Outline Extractor"
+      - "maintainer=Adobe Challenge Solution"
+
+  # Development service with hot reload (optional)
+  pdf-extractor-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: adobe-challenge-1a:dev
+    container_name: pdf-outline-extractor-dev
+    volumes:
+      - ./input:/app/input:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./pdf_extractor:/app/pdf_extractor
+      - ./main.py:/app/main.py
+      - ./docker_entrypoint.py:/app/docker_entrypoint.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPATH=/app
+    profiles:
+      - dev
+    labels:
+      - "challenge=1A"
+      - "description=PDF Outline Extractor (Development)"
+
+volumes:
+  input:
+    driver: local
+  output:
+    driver: local
+  logs:
+    driver: local
+
+networks:
+  default:
+    name: pdf-extractor-network 
